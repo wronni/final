@@ -1,79 +1,66 @@
-// ClearChoice Prototype - Interactive Decision Making
-// Accessibility-focused with progressive disclosure
+// Confirm Prototype - Accessible Action Confirmation
+// Reducing anxiety through preview, confirmation, and recovery
 
 // State Management
 const state = {
     currentScreen: 1,
-    mainChoice: null,
-    subChoice: null,
-    mainChoiceLabel: null,
-    subChoiceLabel: null
+    selectedAction: null,
+    actionLabel: null,
+    riskLevel: null,
+    actionCompleted: false
 };
 
-// Screen content configuration
-const contentMap = {
-    'plan-activity': {
-        title: 'Plan Your Activity',
-        subtitle: 'What kind of activity would you like to plan?',
-        options: [
-            {
-                id: 'outdoor',
-                text: 'Outdoor Activity',
-                description: 'Parks, hiking, walks, outdoor sports'
-            },
-            {
-                id: 'indoor',
-                text: 'Indoor Activity',
-                description: 'Museums, movies, shopping, dining'
-            },
-            {
-                id: 'social',
-                text: 'Social Gathering',
-                description: 'Meeting friends, parties, group events'
-            }
-        ]
+// Action content configuration
+const actionContent = {
+    'change-photo': {
+        label: 'Change Profile Photo',
+        icon: '👤',
+        risk: 'low',
+        preview: {
+            title: 'Change Profile Photo',
+            description: 'Your new photo will replace your current profile picture. This is visible to everyone who views your profile.',
+            details: [
+                'Your old photo will be removed',
+                'You can change it again anytime',
+                'Takes effect immediately',
+                'No one will be notified of the change'
+            ],
+            confirmButton: 'Yes, Change My Photo'
+        },
+        completion: {
+            subtitle: 'Changed your mind? No problem.',
+            statusTitle: 'What just happened:',
+            statusDescription: 'Your profile photo has been updated. The new photo is now visible on your profile.',
+            undoMessage: 'If you prefer your old photo, you can undo this change right now.',
+            finalSummary: 'Your profile photo has been updated successfully.',
+            finalDetail: 'The new photo is now showing on your profile.',
+            reassurance: 'Everything is saved and working properly. You can change your photo again anytime.'
+        }
     },
-    'make-purchase': {
-        title: 'Make a Purchase',
-        subtitle: 'What are you looking to buy?',
-        options: [
-            {
-                id: 'essential',
-                text: 'Essential Item',
-                description: 'Daily necessities, groceries, utilities'
-            },
-            {
-                id: 'personal',
-                text: 'Personal Item',
-                description: 'Clothing, accessories, personal care'
-            },
-            {
-                id: 'gift',
-                text: 'Gift for Someone',
-                description: 'Birthday, holiday, or special occasion'
-            }
-        ]
-    },
-    'organize-task': {
-        title: 'Organize Your Task',
-        subtitle: 'What type of task do you need to organize?',
-        options: [
-            {
-                id: 'home',
-                text: 'Home Task',
-                description: 'Cleaning, organizing, home maintenance'
-            },
-            {
-                id: 'work',
-                text: 'Work Task',
-                description: 'Projects, meetings, deadlines'
-            },
-            {
-                id: 'personal',
-                text: 'Personal Task',
-                description: 'Appointments, errands, self-care'
-            }
-        ]
+    'delete-messages': {
+        label: 'Delete All Messages',
+        icon: '✉️',
+        risk: 'high',
+        preview: {
+            title: 'Delete All Messages',
+            description: 'This will permanently remove all your messages. We want to make sure you understand what will happen.',
+            details: [
+                'All messages will be permanently deleted',
+                'This cannot be undone after final confirmation',
+                'Messages with others will also be removed',
+                'You have 30 seconds to undo after deletion'
+            ],
+            confirmButton: 'Yes, Delete All Messages'
+        },
+        completion: {
+            subtitle: 'You have 30 seconds to undo if needed.',
+            statusTitle: 'What just happened:',
+            statusDescription: 'All your messages have been deleted. They are no longer visible in your inbox.',
+            undoMessage: 'You can undo this deletion right now. After you confirm or wait 30 seconds, it will be permanent.',
+            finalSummary: 'All your messages have been permanently deleted.',
+            finalDetail: 'Your inbox is now empty and ready for new messages.',
+            reassurance: 'The deletion is complete. Your account is secure and working normally.'
+        }
     }
 };
 
@@ -135,9 +122,9 @@ function navigateToScreen(screenNumber) {
         targetScreen.classList.add('active');
         state.currentScreen = screenNumber;
 
-        // Update progress
-        const progress = (screenNumber - 1) * 25; // 4 screens = 25% each
-        updateProgress(progress);
+        // Update progress based on screen
+        const progressMap = { 1: 0, 2: 33, 3: 66, 4: 100 };
+        updateProgress(progressMap[screenNumber] || 0);
 
         // Focus on first interactive element
         setTimeout(() => {
@@ -157,115 +144,149 @@ function addClickEffect(button) {
     }, 300);
 }
 
-// Handle Main Choice (Screen 1 -> Screen 2)
-function handleMainChoice(choice, label) {
-    state.mainChoice = choice;
-    state.mainChoiceLabel = label;
+// Handle Action Selection (Screen 1 -> Screen 2)
+function handleActionSelection(action, risk, label) {
+    state.selectedAction = action;
+    state.actionLabel = label;
+    state.riskLevel = risk;
+    state.actionCompleted = false;
 
     playSound('clickSound');
     announce(`Selected: ${label}`);
 
-    // Populate Screen 2 with relevant content
-    const content = contentMap[choice];
+    // Populate Screen 2 with action preview
+    const content = actionContent[action];
     if (content) {
-        document.getElementById('screen2Title').textContent = content.title;
-        document.getElementById('screen2Subtitle').textContent = content.subtitle;
+        const previewCard = document.getElementById('previewCard');
+        const confirmBtn = document.getElementById('confirmActionBtn');
 
-        // Update option buttons
-        content.options.forEach((option, index) => {
-            const optionNumber = index + 1;
-            document.getElementById(`option${optionNumber}Text`).textContent = option.text;
-            document.getElementById(`option${optionNumber}Desc`).textContent = option.description;
+        // Update preview card styling based on risk
+        previewCard.className = `preview-card ${risk}-risk-preview`;
+        confirmBtn.className = `choice-btn confirm-action ${risk}-risk-confirm`;
 
-            const button = document.querySelector(`[data-suboption="option${optionNumber}"]`);
-            button.dataset.suboptionId = option.id;
-            button.dataset.suboptionLabel = option.text;
+        // Update content
+        document.getElementById('previewIcon').textContent = content.icon;
+        document.getElementById('previewTitle').textContent = content.preview.title;
+        document.getElementById('previewDescription').textContent = content.preview.description;
+        document.getElementById('confirmBtnText').textContent = content.preview.confirmButton;
+
+        // Update risk badge
+        const riskBadge = document.getElementById('riskBadge');
+        riskBadge.textContent = risk === 'low' ? 'Easy to change' : 'Needs attention';
+        riskBadge.className = `risk-badge ${risk}-risk-badge`;
+
+        // Update details list
+        const detailsList = document.getElementById('previewDetails');
+        detailsList.innerHTML = '';
+        content.preview.details.forEach(detail => {
+            const li = document.createElement('li');
+            li.textContent = detail;
+            detailsList.appendChild(li);
         });
     }
 
     // Navigate after brief delay for feedback
     setTimeout(() => {
         navigateToScreen(2);
-        announce(`Now on screen: ${content.title}`);
+        announce(`Review this action carefully: ${label}`);
     }, 300);
 }
 
-// Handle Sub Choice (Screen 2 -> Screen 3)
-function handleSubChoice(subChoiceId, label) {
-    state.subChoice = subChoiceId;
-    state.subChoiceLabel = label;
-
+// Handle Confirmation (Screen 2 -> Screen 3)
+function handleConfirmation() {
     playSound('clickSound');
-    announce(`Selected: ${label}`);
+    announce('Action is being completed');
 
-    // Update confirmation screen
-    document.getElementById('confirmationMain').textContent = state.mainChoiceLabel;
-    document.getElementById('confirmationSub').textContent = state.subChoiceLabel;
+    const content = actionContent[state.selectedAction];
+    if (content) {
+        // Update Screen 3 content
+        document.getElementById('screen3Subtitle').textContent = content.completion.subtitle;
+        document.getElementById('statusTitle').textContent = content.completion.statusTitle;
+        document.getElementById('statusDescription').textContent = content.completion.statusDescription;
+        document.getElementById('undoMessage').textContent = content.completion.undoMessage;
+    }
+
+    state.actionCompleted = true;
 
     // Navigate after brief delay
     setTimeout(() => {
         navigateToScreen(3);
-        announce('Confirm your selection');
+        announce('Action complete. You can undo if needed.');
     }, 300);
 }
 
-// Handle Confirmation (Screen 3 -> Screen 4)
-function handleConfirmation() {
-    playSound('successSound');
-    announce('Choice confirmed!');
+// Handle Undo (Screen 3 -> Screen 1)
+function handleUndo() {
+    playSound('clickSound');
+    announce('Action undone. Returning to start.');
 
-    // Update summary screen
-    document.getElementById('summaryMain').textContent = state.mainChoiceLabel;
-    document.getElementById('summarySub').textContent = state.subChoiceLabel;
+    state.actionCompleted = false;
+
+    // Navigate after brief delay
+    setTimeout(() => {
+        navigateToScreen(1);
+        announce('Action has been undone. Choose another action when ready.');
+    }, 300);
+}
+
+// Handle Keep Change (Screen 3 -> Screen 4)
+function handleKeepChange() {
+    playSound('successSound');
+    announce('Change confirmed and saved');
+
+    const content = actionContent[state.selectedAction];
+    if (content) {
+        // Update Screen 4 content
+        document.getElementById('finalSummary').textContent = content.completion.finalSummary;
+        document.getElementById('finalDetail').textContent = content.completion.finalDetail;
+        document.getElementById('reassuranceText').textContent = content.completion.reassurance;
+    }
 
     // Navigate after brief delay
     setTimeout(() => {
         navigateToScreen(4);
-        announce('All set! Your choice has been saved.');
+        announce('All set! Your action is complete.');
     }, 300);
 }
 
-// Reset State and Start Over
+// Handle Start Over (Screen 4 -> Screen 1)
 function handleStartOver() {
     playSound('clickSound');
     announce('Starting over');
 
     // Reset state
-    state.mainChoice = null;
-    state.subChoice = null;
-    state.mainChoiceLabel = null;
-    state.subChoiceLabel = null;
+    state.selectedAction = null;
+    state.actionLabel = null;
+    state.riskLevel = null;
+    state.actionCompleted = false;
 
-    // Navigate back to screen 1
+    // Navigate after brief delay
     setTimeout(() => {
         navigateToScreen(1);
-        announce('Welcome back to ClearChoice');
+        announce('Ready for a new action. Take your time.');
     }, 300);
 }
 
 // Initialize Event Listeners
 function initEventListeners() {
-    // Screen 1: Main choices
-    document.querySelectorAll('[data-choice]').forEach(button => {
+    // Screen 1: Action selection buttons
+    document.querySelectorAll('[data-action]').forEach(button => {
         button.addEventListener('click', (e) => {
             addClickEffect(button);
-            const choice = e.currentTarget.dataset.choice;
+            const action = e.currentTarget.dataset.action;
+            const risk = e.currentTarget.dataset.risk;
             const label = e.currentTarget.querySelector('.choice-text').textContent;
-            handleMainChoice(choice, label);
+            handleActionSelection(action, risk, label);
         });
     });
 
-    // Screen 2: Sub choices
-    document.querySelectorAll('[data-suboption]').forEach(button => {
-        button.addEventListener('click', (e) => {
-            addClickEffect(button);
-            const subChoiceId = e.currentTarget.dataset.suboptionId;
-            const label = e.currentTarget.dataset.suboptionLabel;
-            handleSubChoice(subChoiceId, label);
-        });
+    // Screen 2: Confirm action button
+    document.getElementById('confirmActionBtn').addEventListener('click', (e) => {
+        addClickEffect(e.currentTarget);
+        handleConfirmation();
     });
 
-    // Back button: Screen 2 -> Screen 1
+    // Screen 2: Back button
     document.getElementById('backToScreen1').addEventListener('click', (e) => {
         addClickEffect(e.currentTarget);
         playSound('clickSound');
@@ -275,23 +296,19 @@ function initEventListeners() {
         }, 200);
     });
 
-    // Back button: Screen 3 -> Screen 2
-    document.getElementById('backToScreen2').addEventListener('click', (e) => {
+    // Screen 3: Undo button
+    document.getElementById('undoBtn').addEventListener('click', (e) => {
         addClickEffect(e.currentTarget);
-        playSound('clickSound');
-        announce('Going back to change selection');
-        setTimeout(() => {
-            navigateToScreen(2);
-        }, 200);
+        handleUndo();
     });
 
-    // Confirm button: Screen 3 -> Screen 4
-    document.getElementById('confirmBtn').addEventListener('click', (e) => {
+    // Screen 3: Keep change button
+    document.getElementById('keepBtn').addEventListener('click', (e) => {
         addClickEffect(e.currentTarget);
-        handleConfirmation();
+        handleKeepChange();
     });
 
-    // Start over button: Screen 4 -> Screen 1
+    // Screen 4: Start over button
     document.getElementById('startOver').addEventListener('click', (e) => {
         addClickEffect(e.currentTarget);
         handleStartOver();
@@ -304,7 +321,10 @@ function initEventListeners() {
             if (state.currentScreen === 2) {
                 document.getElementById('backToScreen1').click();
             } else if (state.currentScreen === 3) {
-                document.getElementById('backToScreen2').click();
+                // On screen 3, escape triggers undo
+                document.getElementById('undoBtn').click();
+            } else if (state.currentScreen === 4) {
+                document.getElementById('startOver').click();
             }
         }
     });
@@ -315,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAudio();
     initEventListeners();
     navigateToScreen(1);
-    announce('Welcome to ClearChoice. Take your time and choose what feels right.');
+    announce('Welcome to Confirm. Choose an action when you\'re ready. Take your time.');
 
     // Allow audio playback on first user interaction
     document.body.addEventListener('click', () => {
@@ -334,9 +354,10 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         state,
         navigateToScreen,
-        handleMainChoice,
-        handleSubChoice,
+        handleActionSelection,
         handleConfirmation,
+        handleUndo,
+        handleKeepChange,
         handleStartOver
     };
 }

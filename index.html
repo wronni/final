@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClearChoice - Simple Decision Making</title>
+    <title>Confirm - Accessible Action Confirmation</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,86 +12,109 @@
         <div class="progress-fill" id="progressFill"></div>
     </div>
 
-    <!-- Screen 1: Home Screen -->
+    <!-- Screen 1: Action Preview (Choose Action) -->
     <main id="screen1" class="screen active" aria-live="polite">
         <div class="container">
-            <h1 class="title">Welcome to ClearChoice</h1>
-            <p class="subtitle">Take your time. Choose what feels right.</p>
+            <h1 class="title">Choose an Action</h1>
+            <p class="subtitle">Take your time. You're in control.</p>
 
-            <div class="choices" role="group" aria-label="Main options">
-                <button class="choice-btn primary" data-choice="plan-activity" aria-label="Plan an activity">
-                    <span class="icon" aria-hidden="true">📅</span>
-                    <span class="choice-text">Plan an Activity</span>
+            <div class="choices" role="group" aria-label="Available actions">
+                <!-- Low-Risk Action -->
+                <button class="choice-btn low-risk" data-action="change-photo" data-risk="low" aria-label="Change profile photo - low risk action">
+                    <div class="risk-indicator" aria-hidden="true">
+                        <span class="risk-icon">🟦</span>
+                        <span class="risk-label">Easy to change</span>
+                    </div>
+                    <span class="choice-text">Change Profile Photo</span>
+                    <span class="choice-description">Update your profile picture. You can change it again anytime.</span>
                 </button>
 
-                <button class="choice-btn primary" data-choice="make-purchase" aria-label="Make a purchase decision">
-                    <span class="icon" aria-hidden="true">🛒</span>
-                    <span class="choice-text">Make a Purchase</span>
-                </button>
-
-                <button class="choice-btn primary" data-choice="organize-task" aria-label="Organize a task">
-                    <span class="icon" aria-hidden="true">✓</span>
-                    <span class="choice-text">Organize a Task</span>
+                <!-- High-Risk Action -->
+                <button class="choice-btn high-risk" data-action="delete-messages" data-risk="high" aria-label="Delete all messages - needs attention">
+                    <div class="risk-indicator" aria-hidden="true">
+                        <span class="risk-icon">🟧</span>
+                        <span class="risk-label">Needs attention</span>
+                    </div>
+                    <span class="choice-text">Delete All Messages</span>
+                    <span class="choice-description">Remove all your messages. We'll help you do this safely.</span>
                 </button>
             </div>
         </div>
     </main>
 
-    <!-- Screen 2: Expanded Option View -->
+    <!-- Screen 2: Confirmation Prompt (Review Before Action) -->
     <main id="screen2" class="screen" aria-live="polite">
         <div class="container">
-            <h1 class="title" id="screen2Title">Choose Your Option</h1>
-            <p class="subtitle" id="screen2Subtitle">Select the option that works best for you</p>
+            <h1 class="title" id="screen2Title">Review This Action</h1>
+            <p class="subtitle">Make sure this is what you want to do</p>
 
-            <div class="choices" role="group" aria-label="Detailed options">
-                <button class="choice-btn secondary" data-suboption="option1" aria-label="First option">
-                    <span class="choice-text" id="option1Text">Option 1</span>
-                    <span class="choice-description" id="option1Desc">Description for option 1</span>
-                </button>
+            <div class="preview-card" id="previewCard" role="article">
+                <div class="preview-header">
+                    <div class="preview-icon" id="previewIcon" aria-hidden="true">📋</div>
+                    <div class="preview-risk" id="previewRisk">
+                        <span class="risk-badge" id="riskBadge">Low Risk</span>
+                    </div>
+                </div>
+                <h2 class="preview-title" id="previewTitle">Action Name</h2>
+                <div class="preview-content">
+                    <h3 class="preview-section-title">What will happen:</h3>
+                    <p class="preview-description" id="previewDescription">Description of the action</p>
 
-                <button class="choice-btn secondary" data-suboption="option2" aria-label="Second option">
-                    <span class="choice-text" id="option2Text">Option 2</span>
-                    <span class="choice-description" id="option2Desc">Description for option 2</span>
-                </button>
-
-                <button class="choice-btn secondary" data-suboption="option3" aria-label="Third option">
-                    <span class="choice-text" id="option3Text">Option 3</span>
-                    <span class="choice-description" id="option3Desc">Description for option 3</span>
-                </button>
-            </div>
-
-            <button class="back-btn" id="backToScreen1" aria-label="Go back to main options">
-                <span aria-hidden="true">←</span> Back
-            </button>
-        </div>
-    </main>
-
-    <!-- Screen 3: Confirmation Screen -->
-    <main id="screen3" class="screen" aria-live="polite">
-        <div class="container">
-            <h1 class="title">Confirm Your Choice</h1>
-            <p class="subtitle">You can always go back and change your mind</p>
-
-            <div class="confirmation-card" role="article">
-                <div class="confirmation-icon" aria-hidden="true">✓</div>
-                <h2 class="confirmation-title" id="confirmationTitle">Your Selection</h2>
-                <p class="confirmation-detail" id="confirmationMain">Main choice</p>
-                <p class="confirmation-detail" id="confirmationSub">Sub choice</p>
+                    <h3 class="preview-section-title">Good to know:</h3>
+                    <ul class="preview-details" id="previewDetails">
+                        <li>Detail 1</li>
+                        <li>Detail 2</li>
+                    </ul>
+                </div>
             </div>
 
             <div class="choices" role="group" aria-label="Confirmation actions">
-                <button class="choice-btn confirm" id="confirmBtn" aria-label="Confirm and continue">
-                    <span class="choice-text">Yes, This Looks Good</span>
+                <button class="choice-btn confirm-action" id="confirmActionBtn" aria-label="Yes, continue with this action">
+                    <span class="choice-text" id="confirmBtnText">Yes, Continue</span>
                 </button>
 
-                <button class="choice-btn secondary-outline" id="backToScreen2" aria-label="Go back to change selection">
-                    <span class="choice-text">Go Back to Change</span>
+                <button class="choice-btn secondary-outline" id="backToScreen1" aria-label="No, go back">
+                    <span class="choice-text">No, Take Me Back</span>
                 </button>
             </div>
         </div>
     </main>
 
-    <!-- Screen 4: Completion State -->
+    <!-- Screen 3: Undo or Recovery State (Action Complete with Undo) -->
+    <main id="screen3" class="screen" aria-live="polite">
+        <div class="container">
+            <div class="action-complete-icon" aria-hidden="true">
+                <div class="completion-circle">
+                    <div class="completion-check">✓</div>
+                </div>
+            </div>
+
+            <h1 class="title">Action Complete</h1>
+            <p class="subtitle" id="screen3Subtitle">Changed your mind? No problem.</p>
+
+            <div class="status-card" role="article">
+                <h2 class="status-title" id="statusTitle">What just happened:</h2>
+                <p class="status-description" id="statusDescription">Your action has been completed.</p>
+
+                <div class="undo-section">
+                    <p class="undo-message" id="undoMessage">You can undo this action if you'd like.</p>
+                </div>
+            </div>
+
+            <div class="choices" role="group" aria-label="Next steps">
+                <button class="choice-btn undo-btn" id="undoBtn" aria-label="Undo this action">
+                    <span class="undo-icon" aria-hidden="true">↶</span>
+                    <span class="choice-text">Undo This Action</span>
+                </button>
+
+                <button class="choice-btn keep-btn" id="keepBtn" aria-label="Keep this change">
+                    <span class="choice-text">Keep This Change</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Screen 4: Final Confirmation (All Set) -->
     <main id="screen4" class="screen" aria-live="polite">
         <div class="container">
             <div class="success-animation" aria-hidden="true">
@@ -101,23 +124,22 @@
             </div>
 
             <h1 class="title success-title">All Set!</h1>
-            <p class="subtitle">You've made your choice with confidence</p>
+            <p class="subtitle">You've completed this action with confidence</p>
 
             <div class="summary-card" role="article">
-                <h2 class="summary-heading">Your Decision Summary</h2>
-                <div class="summary-item">
-                    <span class="summary-label">Category:</span>
-                    <span class="summary-value" id="summaryMain">-</span>
+                <h2 class="summary-heading">What happened:</h2>
+                <div class="summary-content">
+                    <p class="summary-description" id="finalSummary">Your action has been completed successfully.</p>
+                    <div class="summary-detail" id="finalDetail"></div>
                 </div>
-                <div class="summary-item">
-                    <span class="summary-label">Selection:</span>
-                    <span class="summary-value" id="summarySub">-</span>
+                <div class="reassurance-box">
+                    <p class="reassurance-text" id="reassuranceText">Everything is safe and working properly.</p>
                 </div>
             </div>
 
             <div class="choices" role="group" aria-label="Next actions">
-                <button class="choice-btn primary" id="startOver" aria-label="Start over with a new choice">
-                    <span class="choice-text">Make Another Choice</span>
+                <button class="choice-btn primary" id="startOver" aria-label="Try another action">
+                    <span class="choice-text">Try Another Action</span>
                 </button>
             </div>
         </div>
@@ -125,7 +147,6 @@
 
     <!-- Audio Elements for Feedback -->
     <audio id="clickSound" preload="auto">
-        <!-- Inline data URL for a simple click sound -->
         <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTcIGWi77eefTRAMUKfj8LZjHAY4kdfyy3ksBSR3x/DdkEAKFF606+uoVRQKRp/g8r5sIQUrgs7y2Yk3CBlou+3nn00QDFCn4/C2YxwGOJHX8st5LAUkd8fw3ZBAA==" type="audio/wav">
     </audio>
     <audio id="successSound" preload="auto">

@@ -19,44 +19,70 @@ const state = {
     touchEnd: null
 };
 
-// Audio Context
-const audioContext = {
-    clickSound: null,
-    successSound: null,
-    swipeSound: null,
-    directionSound: null
-};
+// Web Audio API Context
+let webAudioContext = null;
+let audioInitialized = false;
 
-// Initialize audio elements
+// Initialize Web Audio API
 function initAudio() {
-    audioContext.clickSound = document.getElementById('clickSound');
-    audioContext.successSound = document.getElementById('successSound');
-    audioContext.swipeSound = document.getElementById('swipeSound');
-    audioContext.directionSound = document.getElementById('directionSound');
-
-    // Set audio volumes
-    Object.keys(audioContext).forEach(key => {
-        if (audioContext[key]) {
-            audioContext[key].volume = 0.4;
-        }
-    });
+    try {
+        webAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioInitialized = true;
+        console.log('Audio initialized successfully');
+    } catch (e) {
+        console.error('Web Audio API not supported:', e);
+    }
 }
 
-// Play sound feedback
-function playSound(type) {
-    if (!state.feedbackSettings.sound) return;
+// Generate a tone using Web Audio API
+function playTone(frequency, duration, type = 'sine') {
+    if (!state.feedbackSettings.sound || !audioInitialized) return;
 
     try {
-        const sound = audioContext[type];
-        if (sound) {
-            sound.currentTime = 0;
-            sound.play().catch(e => {
-                console.log('Audio play prevented:', e);
-            });
-            state.stats.sounds++;
-        }
+        const oscillator = webAudioContext.createOscillator();
+        const gainNode = webAudioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(webAudioContext.destination);
+
+        oscillator.frequency.value = frequency;
+        oscillator.type = type;
+
+        // Envelope for smoother sound
+        gainNode.gain.setValueAtTime(0, webAudioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, webAudioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, webAudioContext.currentTime + duration);
+
+        oscillator.start(webAudioContext.currentTime);
+        oscillator.stop(webAudioContext.currentTime + duration);
+
+        state.stats.sounds++;
+        console.log(`Playing ${type} tone at ${frequency}Hz for ${duration}s`);
     } catch (e) {
-        console.log('Audio not available:', e);
+        console.error('Error playing sound:', e);
+    }
+}
+
+// Play sound feedback with different tones for different actions
+function playSound(type) {
+    if (!state.feedbackSettings.sound || !audioInitialized) return;
+
+    switch(type) {
+        case 'clickSound':
+            playTone(800, 0.1, 'sine');
+            break;
+        case 'successSound':
+            playTone(600, 0.15, 'sine');
+            setTimeout(() => playTone(800, 0.15, 'sine'), 100);
+            break;
+        case 'swipeSound':
+            playTone(400, 0.08, 'sine');
+            break;
+        case 'directionSound':
+            playTone(700, 0.12, 'triangle');
+            break;
+        default:
+            playTone(500, 0.1, 'sine');
     }
 }
 
@@ -65,8 +91,19 @@ function triggerHaptic(pattern = [50]) {
     if (!state.feedbackSettings.haptic) return;
 
     if ('vibrate' in navigator) {
-        navigator.vibrate(pattern);
-        state.stats.haptics++;
+        try {
+            const success = navigator.vibrate(pattern);
+            if (success) {
+                state.stats.haptics++;
+                console.log(`Haptic triggered: ${pattern}`);
+            } else {
+                console.log('Haptic feedback failed');
+            }
+        } catch (e) {
+            console.error('Haptic error:', e);
+        }
+    } else {
+        console.log('Vibration API not supported');
     }
 }
 
@@ -129,9 +166,12 @@ function navigateToScreen(screenNumber, animate = true) {
 
 // Add click effect animation
 function addClickEffect(element) {
+    console.log('Adding click effect, motion enabled:', state.feedbackSettings.motion);
+
     if (!state.feedbackSettings.motion) return;
 
     element.classList.add('clicked');
+    console.log('Click effect added to element');
     setTimeout(() => {
         element.classList.remove('clicked');
     }, 300);
@@ -487,36 +527,29 @@ function checkHapticSupport() {
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
-    initAudio();
+    console.log('SenseFlow initializing...');
+
     initEventListeners();
     initGestureDetection();
     checkHapticSupport();
     navigateToScreen(1, false);
     announce('Welcome to SenseFlow. A multisensory interaction experience.');
 
-    // Prime audio context on first user interaction
-    document.body.addEventListener('click', () => {
-        Object.keys(audioContext).forEach(key => {
-            if (audioContext[key]) {
-                audioContext[key].play().then(() => {
-                    audioContext[key].pause();
-                    audioContext[key].currentTime = 0;
-                }).catch(() => {});
-            }
-        });
-    }, { once: true });
+    console.log('Initial state:', state);
 
-    // Also prime on first touch
-    document.body.addEventListener('touchstart', () => {
-        Object.keys(audioContext).forEach(key => {
-            if (audioContext[key]) {
-                audioContext[key].play().then(() => {
-                    audioContext[key].pause();
-                    audioContext[key].currentTime = 0;
-                }).catch(() => {});
-            }
-        });
-    }, { once: true });
+    // Initialize audio on first user interaction (required by browsers)
+    const enableAudio = () => {
+        if (!audioInitialized) {
+            initAudio();
+            console.log('Audio enabled by user interaction');
+        }
+    };
+
+    document.body.addEventListener('click', enableAudio, { once: true });
+    document.body.addEventListener('touchstart', enableAudio, { once: true });
+    document.body.addEventListener('keydown', enableAudio, { once: true });
+
+    console.log('SenseFlow initialization complete');
 });
 
 // Export for testing (if needed)

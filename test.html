@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SenseFlow Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #0066CC;
+        }
+        .test-btn {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            margin: 10px 0;
+            font-size: 18px;
+            font-weight: 600;
+            border: 3px solid #333;
+            border-radius: 12px;
+            background: #0066CC;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        .test-btn:active {
+            transform: scale(0.95);
+        }
+        .feedback {
+            padding: 10px;
+            margin: 10px 0;
+            background: #fff;
+            border-radius: 8px;
+            border-left: 4px solid #2E7D32;
+            font-family: monospace;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status.success { background: #2E7D32; color: white; }
+        .status.error { background: #D32F2F; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔊 SenseFlow Feature Test</h1>
+    <p>Click each button to test the features:</p>
+
+    <button class="test-btn" onclick="testSound()">Test Sound 🔊</button>
+    <button class="test-btn" onclick="testHaptic()">Test Haptic 📳</button>
+    <button class="test-btn" onclick="testMotion()">Test Motion 〰️</button>
+    <button class="test-btn" onclick="testAll()">Test All ✨</button>
+
+    <div id="feedback"></div>
+
+    <script>
+        let audioContext = null;
+        let initialized = false;
+
+        function init() {
+            if (!initialized) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    initialized = true;
+                    addFeedback('✅ Audio initialized successfully', 'success');
+                } catch (e) {
+                    addFeedback('❌ Audio initialization failed: ' + e.message, 'error');
+                }
+            }
+        }
+
+        function addFeedback(message, type = '') {
+            const div = document.createElement('div');
+            div.className = 'feedback';
+            div.innerHTML = message + (type ? `<span class="status ${type}">${type}</span>` : '');
+            document.getElementById('feedback').appendChild(div);
+        }
+
+        function testSound() {
+            init();
+            addFeedback('Testing sound...');
+
+            if (!audioContext) {
+                addFeedback('❌ Audio context not available', 'error');
+                return;
+            }
+
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.15);
+
+                addFeedback('✅ Sound played successfully!', 'success');
+            } catch (e) {
+                addFeedback('❌ Sound error: ' + e.message, 'error');
+            }
+        }
+
+        function testHaptic() {
+            addFeedback('Testing haptic...');
+
+            if ('vibrate' in navigator) {
+                try {
+                    const success = navigator.vibrate([50, 50, 100]);
+                    if (success) {
+                        addFeedback('✅ Haptic feedback triggered! (pattern: 50, 50, 100)', 'success');
+                    } else {
+                        addFeedback('⚠️ Haptic returned false (may not be supported)', 'error');
+                    }
+                } catch (e) {
+                    addFeedback('❌ Haptic error: ' + e.message, 'error');
+                }
+            } else {
+                addFeedback('❌ Vibration API not supported on this device/browser', 'error');
+            }
+        }
+
+        function testMotion() {
+            addFeedback('Testing motion animation...');
+            const btn = event.target;
+            btn.style.animation = 'none';
+            setTimeout(() => {
+                btn.style.animation = '';
+                btn.style.transform = 'scale(0.95) rotate(2deg)';
+                setTimeout(() => {
+                    btn.style.transform = '';
+                    addFeedback('✅ Motion animation executed!', 'success');
+                }, 300);
+            }, 10);
+        }
+
+        function testAll() {
+            addFeedback('🎉 Testing all features...');
+            testSound();
+            setTimeout(() => testHaptic(), 200);
+            setTimeout(() => testMotion(), 400);
+        }
+
+        // Auto-init on any interaction
+        document.body.addEventListener('click', init, { once: true });
+    </script>
+</body>
+</html>
